@@ -27,14 +27,22 @@ pub struct WebosClient<T> {
     callbacks: Arc<Mutex<HashMap<String, Sender<CommandResponse>>>>,
     pub key: Option<String>,
 }
-
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
 pub enum ClientError {
     MalformedUrl,
     ConnectionError,
     CommandSendError,
 }
-
+impl std::fmt::Display for ClientError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ClientError::MalformedUrl => write!(f, "MalformedUrl"),
+            ClientError::ConnectionError => write!(f, "ConnectionError"),
+            ClientError::CommandSendError => write!(f, "CommandSendError"),
+        }
+    }
+    
+}
 #[derive(Serialize, Deserialize)]
 pub struct WebOsClientConfig {
     pub address: String,
@@ -302,7 +310,7 @@ mod tests {
             cx.waker().wake_by_ref();
             if !self.registered {
                 self.get_mut().registered = true;
-                return Poll::Ready(Some(Ok(Message::Text(
+                Poll::Ready(Some(Ok(Message::Text(
                     r#"{
                         "id": "0",
                         "type": "registered",
@@ -311,13 +319,11 @@ mod tests {
                         }
                     }"#
                     .to_owned(),
-                ))));
+                ))))
+            } else if let Some(message) = self.get_mut().queue.pop_front() {
+                Poll::Ready(Some(Ok(message)))
             } else {
-                return if let Some(message) = self.get_mut().queue.pop_front() {
-                    Poll::Ready(Some(Ok(message)))
-                } else {
-                    Poll::Pending
-                };
+                Poll::Pending
             }
         }
     }
