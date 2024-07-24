@@ -27,7 +27,7 @@ pub struct WebosClient<T> {
     callbacks: Arc<Mutex<HashMap<String, Sender<CommandResponse>>>>,
     pub key: Option<String>,
 }
-#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ClientError {
     MalformedUrl,
     ConnectionError,
@@ -75,9 +75,7 @@ impl WebosClient<SplitSink<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>
     /// Creates client connected to device with given address
     pub async fn new(config: WebOsClientConfig) -> Result<Self, ClientError> {
         let url = url::Url::parse(&config.address).map_err(|_| ClientError::MalformedUrl)?;
-        let (ws_stream, _) = connect_async(url)
-            .await
-            .map_err(|_| ClientError::ConnectionError)?;
+        let (ws_stream, _) = connect_async(url).await.map_err(|_| ClientError::ConnectionError)?;
         debug!("WebSocket handshake has been successfully completed");
         let (write, read) = ws_stream.split();
         WebosClient::from_stream_and_sink(read, write, config).await
