@@ -319,7 +319,7 @@ mod tests {
                             "client-key": "key"
                         }
                     }"#
-                    .to_owned(),
+                    .to_owned().into(),
                 ))))
             } else if let Some(message) = self.get_mut().queue.pop_front() {
                 Poll::Ready(Some(Ok(message)))
@@ -363,7 +363,7 @@ mod tests {
                                 },
                     "type":"response"
                 }"#
-                .to_owned(),
+                .to_owned().into(),
             ),
         );
 
