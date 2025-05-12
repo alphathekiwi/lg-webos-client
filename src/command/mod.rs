@@ -5,12 +5,14 @@ use serde_json::{json, Value};
 #[serde(rename_all = "camelCase")]
 pub struct CommandRequest {
     id: String,
-    r#type: String,
+    r#type: String, // Required by lg api
     uri: String,
     payload: Option<Value>,
 }
 
 pub enum Command {
+    CreateAlert(Value),
+    CloseAlert(String),
     CreateToast(String),
     OpenBrowser(String),
     TurnOff,
@@ -36,6 +38,7 @@ pub enum Command {
     Turn3DOff,
     GetServicesList,
     Launch(String, Value),
+    GetAudioOutput,
 }
 
 #[derive(Debug)]
@@ -46,6 +49,18 @@ pub struct CommandResponse {
 
 pub fn create_command(id: String, cmd: Command) -> CommandRequest {
     match cmd {
+        Command::CreateAlert(payload) => CommandRequest {
+            id,
+            r#type: String::from("request"),
+            uri: String::from("ssap://system.notifications/createAlert"),
+            payload: Some(payload),
+        },
+        Command::CloseAlert(alert_id) => CommandRequest {
+            id,
+            r#type: String::from("request"),
+            uri: String::from("ssap://system.notifications/closeAlert"),
+            payload: Some(json!({"alertId": alert_id})),
+        },
         Command::CreateToast(text) => CommandRequest {
             id,
             r#type: String::from("request"),
@@ -195,6 +210,12 @@ pub fn create_command(id: String, cmd: Command) -> CommandRequest {
             r#type: String::from("request"),
             uri: String::from("ssap://system.launcher/launch"),
             payload: Some(json!({ "id": app_id, "params": params })),
+        },
+        Command::GetAudioOutput => CommandRequest {
+            id,
+            r#type: String::from("request"),
+            uri: String::from("ssap://audio/getSoundOutput"),
+            payload: None,
         },
     }
 }
